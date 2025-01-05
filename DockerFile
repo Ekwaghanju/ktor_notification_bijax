@@ -1,0 +1,29 @@
+# Use an OpenJDK base image
+FROM openjdk:17-jdk-slim AS build
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the project files to the container
+COPY . .
+
+# Ensure gradlew has executable permissions
+RUN chmod +x gradlew
+
+# Run the build command to generate the JAR file
+RUN ./gradlew build --no-daemon
+
+# Use another base image for the final build
+FROM openjdk:17-jdk-slim
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the JAR file from the build stage to the container
+COPY --from=build /app/build/libs/ktor-pushnotification-fcm-0.0.1-all.jar app.jar
+
+# Expose the port your app will run on
+EXPOSE 8080
+
+# Run the application
+CMD ["java", "-jar", "app.jar"]
