@@ -4,14 +4,23 @@ FROM openjdk:17-jdk-slim AS build
 # Set the working directory
 WORKDIR /app
 
-# Copy the project files to the container
-COPY . .
+# Copy Gradle-related files to leverage caching
+COPY gradle /app/gradle
+COPY gradlew /app/gradlew
+COPY build.gradle.kts /app/build.gradle.kts
+COPY settings.gradle.kts /app/settings.gradle.kts
 
 # Ensure gradlew has executable permissions
 RUN chmod +x gradlew
 
-# Run the build command to generate the JAR file
-RUN ./gradlew build --no-daemon
+# Pre-fetch dependencies to cache them
+RUN ./gradlew dependencies --no-daemon
+
+# Copy the rest of the project files
+COPY . .
+
+# Run the fatJar task to generate the JAR file
+RUN ./gradlew fatJar --no-daemon
 
 # Use another base image for the final build
 FROM openjdk:17-jdk-slim
